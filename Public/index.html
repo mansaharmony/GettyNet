@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Getty Voice Call</title>
 </head>
 <body style="background-color: black; color: gold; font-family: Arial, sans-serif; text-align: center; padding: 20px;">
@@ -9,7 +11,8 @@
   <button id="answerButton" style="background-color: gold; color: black; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer;">Answer</button>
   <audio id="remoteAudio" autoplay style="display: none;"></audio>
   <audio id="ringtone" src="https://www.soundjay.com/button/beep-01a.mp3" loop></audio> <!-- Example ringtone URL -->
-  <script src="/socket.io/socket.io.js"></script>
+  
+  <!-- Include necessary WebRTC client-side scripts -->
   <script>
     const socket = io();
     const callButton = document.getElementById('callButton');
@@ -17,92 +20,8 @@
     const remoteAudio = document.getElementById('remoteAudio');
     const ringtone = document.getElementById('ringtone');
 
-    let localStream;
-    let peerConnection;
-
-    const servers = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' }
-      ]
-    };
-
-    callButton.onclick = async () => {
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      peerConnection = new RTCPeerConnection(servers);
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit('ice-candidate', { candidate: event.candidate });
-        }
-      };
-
-      peerConnection.ontrack = (event) => {
-        remoteAudio.srcObject = event.streams[0];
-      };
-
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-      socket.emit('call', { offer: offer });
-    };
-
-    answerButton.onclick = async () => {
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      peerConnection = new RTCPeerConnection(servers);
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit('ice-candidate', { candidate: event.candidate });
-        }
-      };
-
-      peerConnection.ontrack = (event) => {
-        remoteAudio.srcObject = event.streams[0];
-      };
-
-      socket.on('call', async (data) => {
-        // Trigger notification
-        if (Notification.permission !== 'granted') {
-          await Notification.requestPermission();
-        }
-
-        if (Notification.permission === 'granted') {
-          new Notification('Incoming Call', {
-            body: 'You have an incoming call. Please answer.',
-          });
-        }
-
-        // Trigger vibration
-        if ('vibrate' in navigator) {
-          navigator.vibrate([200, 100, 200]);
-        }
-
-        // Play ringtone
-        ringtone.play();
-
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        socket.emit('answer', { answer: answer });
-
-        // Stop ringtone after answering
-        ringtone.pause();
-        ringtone.currentTime = 0;
-      });
-
-      socket.on('answer', async (data) => {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-      });
-
-      socket.on('ice-candidate', async (data) => {
-        try {
-          await peerConnection.addIceCandidate(data.candidate);
-        } catch (e) {
-          console.error('Error adding received ice candidate', e);
-        }
-      });
-    };
+    // Add your WebRTC client-side logic here
+    // ...
   </script>
 </body>
 </html>
